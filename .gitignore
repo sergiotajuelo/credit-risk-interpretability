@@ -1,0 +1,26 @@
+# Virtual environment
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Generated results
+results/
+
+# Logs and secrets
+*.log
+.env
+
+# macOS
+.DS_Store
+
+# Local agent configuration
+.claude/
+AGENTS.md
+CLAUDE.md
