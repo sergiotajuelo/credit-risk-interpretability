@@ -1,13 +1,13 @@
 import time
 
 import numpy as np
+from interpret.glassbox import ExplainableBoostingClassifier
+from piml.models import GAMINetClassifier
 from sklearn.datasets import fetch_openml
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 from xgboost import XGBClassifier
-from interpret.glassbox import ExplainableBoostingClassifier
-from piml.models import GAMINetClassifier
 
 SEED = 42
 

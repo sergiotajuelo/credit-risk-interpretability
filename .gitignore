@@ -6,6 +6,7 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.ruff_cache/
 
 # Jupyter
 .ipynb_checkpoints/
@@ -20,7 +21,8 @@ results/
 # macOS
 .DS_Store
 
-# Local agent configuration
+# Local files (agent configuration and personal notes)
 .claude/
 AGENTS.md
 CLAUDE.md
+NOTAS.md

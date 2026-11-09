@@ -31,13 +31,40 @@ uv venv --python 3.10 .venv
 uv pip install --python .venv -r requirements.txt
 ```
 
-Run the environment check:
+Optionally, install the development tools (ruff, for formatting and linting):
+
+```bash
+uv pip install --python .venv -r requirements-dev.txt
+```
+
+Check the environment:
 
 ```bash
 .venv/bin/python smoke_test.py
 ```
 
 `smoke_test.py` downloads HELOC, makes a stratified 80/20 split (seed 42) and trains logistic regression, XGBoost, EBM and GAMI-Net with default hyperparameters, printing each model's test AUC and training time. It only checks that the environment works; it is not a model comparison.
+
+## Running the experiment
+
+```bash
+.venv/bin/python run.py
+```
+
+`run.py` is the single entry point. For now it downloads the dataset, makes a stratified 60/20/20 split into training, calibration and test sets (seed 42) and runs the exploratory analysis on the training set only. Special codes (-7, -8, -9, and the out-of-range value 9 in `MaxDelq2PublicRecLast12M`) are treated as missing in the figures and summarised in a separate table. While it runs, it prints each step and the main results (partition sizes, monotonicity mismatches, highly correlated pairs and the special code with the largest effect). It writes:
+
+- `results/figures/eda/fig_tasa_impago_por_variable.png`: default rate by bin for each variable, with its expected direction.
+- `results/figures/eda/fig_correlacion.png`: Spearman correlation between the variables.
+- `results/tables/eda/tabla_monotonia_observada.csv`: observed versus expected monotonic direction for each variable.
+- `results/tables/eda/tabla_codigos_especiales.csv`: number of cases and default rate for each special code.
+
+Model training and evaluation will be added later.
+
+To format and lint the code:
+
+```bash
+.venv/bin/ruff format . && .venv/bin/ruff check --fix .
+```
 
 ## Note on GAMI-Net
 
@@ -48,12 +75,21 @@ GAMI-Net is created with `n_jobs=1`. With more threads the process segfaults, be
 ```
 .
 ├── .gitignore
-├── .python-version     Python version used by uv (3.10)
+├── .python-version         Python version used by uv (3.10)
 ├── LICENSE
 ├── README.md
 ├── README.es.md
-├── requirements.txt    Pinned dependencies
-└── smoke_test.py       Environment check
+├── requirements.txt        Pinned runtime dependencies
+├── requirements-dev.txt    Development tools (ruff)
+├── ruff.toml               Formatting and lint settings
+├── run.py                  Entry point of the experiment
+├── smoke_test.py           Environment check
+└── src/
+    ├── __init__.py
+    ├── config.py           Constants: seed, special codes, expected directions, output paths
+    ├── data.py             Dataset download and train/calibration/test split
+    ├── preprocessing.py    Special-code encoder
+    └── eda.py              Exploratory analysis
 ```
 
 ## License
