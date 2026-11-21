@@ -51,14 +51,25 @@ Comprueba el entorno:
 .venv/bin/python run.py
 ```
 
-`run.py` es el único punto de entrada. Por ahora descarga el dataset, hace una partición estratificada 60/20/20 en entrenamiento, calibración y test (semilla 42) y ejecuta el análisis exploratorio solo sobre el conjunto de entrenamiento. Los códigos especiales (-7, -8, -9, y el valor fuera de rango 9 en `MaxDelq2PublicRecLast12M`) se tratan como ausentes en las figuras y se resumen en una tabla aparte. Durante la ejecución muestra cada paso y los resultados principales (tamaños de las particiones, discrepancias de monotonía, pares muy correlacionados y el código especial con más efecto). Genera:
+`run.py` es el único punto de entrada. Descarga el dataset, hace una partición estratificada 60/20/20 en entrenamiento, calibración y test (semilla 42), ejecuta el análisis exploratorio y entrena los modelos. Los dos pasos usan solo el conjunto de entrenamiento. Los códigos especiales (-7, -8, -9, y el valor fuera de rango 9 en `MaxDelq2PublicRecLast12M`) se tratan como ausentes en las figuras y se resumen en una tabla aparte. Durante la ejecución muestra cada paso y los resultados principales (tamaños de las particiones, discrepancias de monotonía, pares muy correlacionados y el código especial con más efecto). Genera:
 
 - `results/figures/eda/fig_tasa_impago_por_variable.png`: tasa de impago por tramo de cada variable, con su dirección esperada.
 - `results/figures/eda/fig_correlacion.png`: correlación de Spearman entre las variables.
 - `results/tables/eda/tabla_monotonia_observada.csv`: dirección monótona observada frente a la esperada para cada variable.
 - `results/tables/eda/tabla_codigos_especiales.csv`: número de casos y tasa de impago de cada código especial.
 
-El entrenamiento y la evaluación de los modelos se añadirán más adelante.
+El paso de entrenamiento ajusta cuatro modelos (regresión logística, XGBoost, EBM y GAMI-Net) con validación cruzada estratificada de 5 bloques sobre el conjunto de entrenamiento. Cada modelo es un pipeline cuyo primer paso es el codificador de códigos especiales, así que las medianas de sustitución se calculan dentro de cada bloque. La mejor configuración se elige por log-loss y también se registra el AUC. El pipeline final se reentrena con todo el conjunto de entrenamiento. Genera:
+
+- `results/models/{logistic_regression,xgboost,ebm,gaminet}.joblib`: cada pipeline ajustado con sus mejores hiperparámetros y sus métricas de validación cruzada.
+- `results/tables/models/tabla_ajuste_hiperparametros.csv`: mejores hiperparámetros, AUC y log-loss de validación cruzada (media y desviación típica) y tiempo de búsqueda de cada modelo.
+
+Los modelos guardados se cargan en lugar de reentrenarse, así que las siguientes ejecuciones tardan unos segundos. Para reentrenar todos los modelos:
+
+```bash
+.venv/bin/python run.py --retrain
+```
+
+El entrenamiento desde cero tarda unos 7-9 minutos en un portátil de 10 núcleos sin GPU, la mayor parte en GAMI-Net. La evaluación en los conjuntos de calibración y test se añadirá más adelante.
 
 Para formatear y revisar el código:
 
@@ -89,7 +100,8 @@ GAMI-Net se crea con `n_jobs=1`. Con más hilos el proceso hace segfault, porque
     ├── config.py           Constantes: semilla, códigos especiales, direcciones esperadas, rutas de salida
     ├── data.py             Descarga del dataset y partición en entrenamiento, calibración y test
     ├── preprocessing.py    Codificador de códigos especiales
-    └── eda.py              Análisis exploratorio
+    ├── eda.py              Análisis exploratorio
+    └── models.py           Búsqueda de hiperparámetros y entrenamiento
 ```
 
 ## Licencia

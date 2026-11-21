@@ -51,14 +51,25 @@ Check the environment:
 .venv/bin/python run.py
 ```
 
-`run.py` is the single entry point. For now it downloads the dataset, makes a stratified 60/20/20 split into training, calibration and test sets (seed 42) and runs the exploratory analysis on the training set only. Special codes (-7, -8, -9, and the out-of-range value 9 in `MaxDelq2PublicRecLast12M`) are treated as missing in the figures and summarised in a separate table. While it runs, it prints each step and the main results (partition sizes, monotonicity mismatches, highly correlated pairs and the special code with the largest effect). It writes:
+`run.py` is the single entry point. It downloads the dataset, makes a stratified 60/20/20 split into training, calibration and test sets (seed 42), runs the exploratory analysis and trains the models. Both steps use the training set only. Special codes (-7, -8, -9, and the out-of-range value 9 in `MaxDelq2PublicRecLast12M`) are treated as missing in the figures and summarised in a separate table. While it runs, it prints each step and the main results (partition sizes, monotonicity mismatches, highly correlated pairs and the special code with the largest effect). It writes:
 
 - `results/figures/eda/fig_tasa_impago_por_variable.png`: default rate by bin for each variable, with its expected direction.
 - `results/figures/eda/fig_correlacion.png`: Spearman correlation between the variables.
 - `results/tables/eda/tabla_monotonia_observada.csv`: observed versus expected monotonic direction for each variable.
 - `results/tables/eda/tabla_codigos_especiales.csv`: number of cases and default rate for each special code.
 
-Model training and evaluation will be added later.
+The training step tunes four models (logistic regression, XGBoost, EBM and GAMI-Net) with 5-fold stratified cross-validation on the training set. Each model is a pipeline whose first step is the special-code encoder, so the replacement medians are computed inside each fold. The best configuration is chosen by log-loss, and AUC is recorded as well. The final pipeline is refitted on the whole training set. It writes:
+
+- `results/models/{logistic_regression,xgboost,ebm,gaminet}.joblib`: each fitted pipeline with its best hyperparameters and cross-validation metrics.
+- `results/tables/models/tabla_ajuste_hiperparametros.csv`: best hyperparameters, cross-validation AUC and log-loss (mean and standard deviation) and search time for each model.
+
+Saved models are loaded instead of retrained, so later runs take a few seconds. To retrain all models:
+
+```bash
+.venv/bin/python run.py --retrain
+```
+
+Training from scratch takes about 7-9 minutes on a 10-core laptop without a GPU, most of it for GAMI-Net. Evaluation on the calibration and test sets will be added later.
 
 To format and lint the code:
 
@@ -89,7 +100,8 @@ GAMI-Net is created with `n_jobs=1`. With more threads the process segfaults, be
     ├── config.py           Constants: seed, special codes, expected directions, output paths
     ├── data.py             Dataset download and train/calibration/test split
     ├── preprocessing.py    Special-code encoder
-    └── eda.py              Exploratory analysis
+    ├── eda.py              Exploratory analysis
+    └── models.py           Hyperparameter search and training
 ```
 
 ## License
