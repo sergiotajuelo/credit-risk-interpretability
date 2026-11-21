@@ -66,3 +66,35 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = PROJECT_ROOT / "results"
 EDA_FIGURES_DIR = RESULTS_DIR / "figures" / "eda"
 EDA_TABLES_DIR = RESULTS_DIR / "tables" / "eda"
+MODELS_DIR = RESULTS_DIR / "models"
+MODELS_TABLES_DIR = RESULTS_DIR / "tables" / "models"
+
+CV_N_SPLITS = 5
+XGB_N_ITER = 100
+LOGISTIC_MAX_ITER = 2000
+
+MODEL_DISPLAY_NAMES = {
+    "logistic_regression": "Regresión logística",
+    "xgboost": "XGBoost",
+    "ebm": "EBM",
+    "gaminet": "GAMI-Net",
+}
+
+SEARCH_SPACES = {
+    "logistic_regression": {"C": [0.001, 0.003, 0.01, 0.03, 0.1, 1]},
+    "xgboost": {
+        "max_depth": [2, 3, 4, 5, 6],
+        "learning_rate": [0.005, 0.01, 0.03, 0.05, 0.1],
+        "n_estimators": [200, 400, 800, 1200, 1600],
+        "subsample": [0.7, 0.85, 1.0],
+        "colsample_bytree": [0.7, 0.85, 1.0],
+        "min_child_weight": [1, 5, 10, 20],
+        "reg_lambda": [0, 1, 5, 10],
+    },
+    "ebm": {"interactions": [0, 5, 10, 20], "max_bins": [64, 128, 256]},
+    # learning_rates rather than reg_clarity: reg_clarity has no effect without interactions.
+    "gaminet": {
+        "interact_num": [0, 10],
+        "learning_rates": [(0.001, 0.001, 0.0001), (0.005, 0.005, 0.0005)],
+    },
+}
