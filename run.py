@@ -4,6 +4,7 @@ import time
 
 from src.data import HelocDataset
 from src.eda import ExploratoryAnalysis
+from src.evaluation import ModelEvaluator
 from src.models import ModelTrainer
 
 logger = logging.getLogger(__name__)
@@ -23,19 +24,24 @@ def main() -> None:
         datefmt="%H:%M:%S",
         force=True,
     )
+    logging.getLogger("interpret").setLevel(logging.WARNING)
     start = time.perf_counter()
 
-    logger.info("Step 1/4: loading data")
+    logger.info("Step 1/5: loading data")
     dataset = HelocDataset.from_openml()
 
-    logger.info("Step 2/4: splitting data")
+    logger.info("Step 2/5: splitting data")
     split = dataset.split()
 
-    logger.info("Step 3/4: exploratory analysis")
+    logger.info("Step 3/5: exploratory analysis")
     ExploratoryAnalysis(split.X_train, split.y_train).run()
 
-    logger.info("Step 4/4: training models")
-    ModelTrainer(split, dataset.special_value_indicators(), retrain=args.retrain).train_all()
+    logger.info("Step 4/5: training models")
+    trainer = ModelTrainer(split, dataset.special_value_indicators(), retrain=args.retrain)
+    models = trainer.train_all()
+
+    logger.info("Step 5/5: evaluating models on the test set")
+    ModelEvaluator(models, split).run()
 
     logger.info("Done in %.1f s", time.perf_counter() - start)
 
