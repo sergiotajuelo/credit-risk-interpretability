@@ -51,7 +51,7 @@ Check the environment:
 .venv/bin/python run.py
 ```
 
-`run.py` is the single entry point. It downloads the dataset, makes a stratified 60/20/20 split into training, calibration and test sets (seed 42), runs the exploratory analysis and trains the models. Both steps use the training set only. Special codes (-7, -8, -9, and the out-of-range value 9 in `MaxDelq2PublicRecLast12M`) are treated as missing in the figures and summarised in a separate table. While it runs, it prints each step and the main results (partition sizes, monotonicity mismatches, highly correlated pairs and the special code with the largest effect). It writes:
+`run.py` is the single entry point. It downloads the dataset, makes a stratified 60/20/20 split into training, calibration and test sets (seed 42), runs the exploratory analysis, trains the models and evaluates them on the test set. The exploratory analysis and the training use the training set only. Special codes (-7, -8, -9, and the out-of-range value 9 in `MaxDelq2PublicRecLast12M`) are treated as missing in the figures and summarised in a separate table. While it runs, it prints each step and the main results (partition sizes, monotonicity mismatches, highly correlated pairs and the special code with the largest effect). It writes:
 
 - `results/figures/eda/fig_tasa_impago_por_variable.png`: default rate by bin for each variable, with its expected direction.
 - `results/figures/eda/fig_correlacion.png`: Spearman correlation between the variables.
@@ -69,7 +69,14 @@ Saved models are loaded instead of retrained, so later runs take a few seconds. 
 .venv/bin/python run.py --retrain
 ```
 
-Training from scratch takes about 7-9 minutes on a 10-core laptop without a GPU, most of it for GAMI-Net. Evaluation on the calibration and test sets will be added later.
+Training from scratch takes about 7-9 minutes on a 10-core laptop without a GPU, most of it for GAMI-Net.
+
+The evaluation step scores the four saved models on the test set only (1975 applications), with Bad as the positive class. The hyperparameters are frozen and the calibration set is not used. It computes AUC, Gini, F1 at a fixed threshold of 0.5, Brier score, log-loss and ECE (10 equal-width bins), each with a 95% percentile confidence interval from 1000 bootstrap resamples (seed 42). The resamples are the same for every model, which also gives a confidence interval for the difference between each model and XGBoost; a difference is significant when its interval does not contain 0. It takes about 5 seconds. It writes:
+
+- `results/tables/evaluation/tabla_metricas_o1.csv`: value and confidence interval of each metric for each model.
+- `results/tables/evaluation/tabla_metricas_o1_formateada.csv`: the same results with one row per model and one column per metric, as text in Spanish number format.
+- `results/tables/evaluation/tabla_diferencias_xgboost.csv`: difference from XGBoost for each model and metric, with its confidence interval and whether it is significant.
+- `results/figures/evaluation/fig_diagramas_fiabilidad.png`: reliability diagram of each model, with the number of applications per bin.
 
 To format and lint the code:
 
@@ -79,7 +86,7 @@ To format and lint the code:
 
 ## Note on GAMI-Net
 
-GAMI-Net is created with `n_jobs=1`. With more threads the process segfaults, because torch, scikit-learn and XGBoost load different OpenMP runtimes. This setting does not change the model.
+GAMI-Net is created with `n_jobs=1`. With more threads the process segfaults, because torch, scikit-learn and XGBoost load different OpenMP runtimes. This setting does not change the model. For the same reason, torch is limited to one thread before predicting with a saved GAMI-Net.
 
 ## Repository structure
 
@@ -101,7 +108,8 @@ GAMI-Net is created with `n_jobs=1`. With more threads the process segfaults, be
     ├── data.py             Dataset download and train/calibration/test split
     ├── preprocessing.py    Special-code encoder
     ├── eda.py              Exploratory analysis
-    └── models.py           Hyperparameter search and training
+    ├── models.py           Hyperparameter search and training
+    └── evaluation.py       Test-set metrics, bootstrap intervals and reliability diagrams
 ```
 
 ## License

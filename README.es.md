@@ -51,7 +51,7 @@ Comprueba el entorno:
 .venv/bin/python run.py
 ```
 
-`run.py` es el único punto de entrada. Descarga el dataset, hace una partición estratificada 60/20/20 en entrenamiento, calibración y test (semilla 42), ejecuta el análisis exploratorio y entrena los modelos. Los dos pasos usan solo el conjunto de entrenamiento. Los códigos especiales (-7, -8, -9, y el valor fuera de rango 9 en `MaxDelq2PublicRecLast12M`) se tratan como ausentes en las figuras y se resumen en una tabla aparte. Durante la ejecución muestra cada paso y los resultados principales (tamaños de las particiones, discrepancias de monotonía, pares muy correlacionados y el código especial con más efecto). Genera:
+`run.py` es el único punto de entrada. Descarga el dataset, hace una partición estratificada 60/20/20 en entrenamiento, calibración y test (semilla 42), ejecuta el análisis exploratorio, entrena los modelos y los evalúa en el conjunto de test. El análisis exploratorio y el entrenamiento usan solo el conjunto de entrenamiento. Los códigos especiales (-7, -8, -9, y el valor fuera de rango 9 en `MaxDelq2PublicRecLast12M`) se tratan como ausentes en las figuras y se resumen en una tabla aparte. Durante la ejecución muestra cada paso y los resultados principales (tamaños de las particiones, discrepancias de monotonía, pares muy correlacionados y el código especial con más efecto). Genera:
 
 - `results/figures/eda/fig_tasa_impago_por_variable.png`: tasa de impago por tramo de cada variable, con su dirección esperada.
 - `results/figures/eda/fig_correlacion.png`: correlación de Spearman entre las variables.
@@ -69,7 +69,14 @@ Los modelos guardados se cargan en lugar de reentrenarse, así que las siguiente
 .venv/bin/python run.py --retrain
 ```
 
-El entrenamiento desde cero tarda unos 7-9 minutos en un portátil de 10 núcleos sin GPU, la mayor parte en GAMI-Net. La evaluación en los conjuntos de calibración y test se añadirá más adelante.
+El entrenamiento desde cero tarda unos 7-9 minutos en un portátil de 10 núcleos sin GPU, la mayor parte en GAMI-Net.
+
+El paso de evaluación mide los cuatro modelos guardados solo en el conjunto de test (1975 solicitudes), con Bad como clase positiva. Los hiperparámetros están congelados y el conjunto de calibración no se usa. Calcula AUC, Gini, F1 con un umbral fijo de 0,5, Brier score, log-loss y ECE (10 tramos de igual anchura), cada uno con un intervalo de confianza al 95 % por percentiles a partir de 1000 remuestreos bootstrap (semilla 42). Los remuestreos son los mismos para todos los modelos, lo que da también un intervalo de confianza para la diferencia entre cada modelo y XGBoost; una diferencia es significativa cuando su intervalo no contiene el 0. Tarda unos 5 segundos. Genera:
+
+- `results/tables/evaluation/tabla_metricas_o1.csv`: valor e intervalo de confianza de cada métrica para cada modelo.
+- `results/tables/evaluation/tabla_metricas_o1_formateada.csv`: los mismos resultados con una fila por modelo y una columna por métrica, como texto con formato numérico español.
+- `results/tables/evaluation/tabla_diferencias_xgboost.csv`: diferencia respecto a XGBoost para cada modelo y métrica, con su intervalo de confianza y si es significativa.
+- `results/figures/evaluation/fig_diagramas_fiabilidad.png`: diagrama de fiabilidad de cada modelo, con el número de solicitudes por tramo.
 
 Para formatear y revisar el código:
 
@@ -79,7 +86,7 @@ Para formatear y revisar el código:
 
 ## Nota sobre GAMI-Net
 
-GAMI-Net se crea con `n_jobs=1`. Con más hilos el proceso hace segfault, porque torch, scikit-learn y XGBoost cargan runtimes de OpenMP distintos. Este ajuste no cambia el modelo.
+GAMI-Net se crea con `n_jobs=1`. Con más hilos el proceso hace segfault, porque torch, scikit-learn y XGBoost cargan runtimes de OpenMP distintos. Este ajuste no cambia el modelo. Por el mismo motivo, torch se limita a un hilo antes de predecir con un GAMI-Net guardado.
 
 ## Estructura del repositorio
 
@@ -101,7 +108,8 @@ GAMI-Net se crea con `n_jobs=1`. Con más hilos el proceso hace segfault, porque
     ├── data.py             Descarga del dataset y partición en entrenamiento, calibración y test
     ├── preprocessing.py    Codificador de códigos especiales
     ├── eda.py              Análisis exploratorio
-    └── models.py           Búsqueda de hiperparámetros y entrenamiento
+    ├── models.py           Búsqueda de hiperparámetros y entrenamiento
+    └── evaluation.py       Métricas en test, intervalos bootstrap y diagramas de fiabilidad
 ```
 
 ## Licencia
