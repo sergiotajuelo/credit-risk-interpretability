@@ -68,6 +68,8 @@ EDA_FIGURES_DIR = RESULTS_DIR / "figures" / "eda"
 EDA_TABLES_DIR = RESULTS_DIR / "tables" / "eda"
 MODELS_DIR = RESULTS_DIR / "models"
 MODELS_TABLES_DIR = RESULTS_DIR / "tables" / "models"
+EVALUATION_FIGURES_DIR = RESULTS_DIR / "figures" / "evaluation"
+EVALUATION_TABLES_DIR = RESULTS_DIR / "tables" / "evaluation"
 
 CV_N_SPLITS = 5
 XGB_N_ITER = 100
@@ -98,3 +100,9 @@ SEARCH_SPACES = {
         "learning_rates": [(0.001, 0.001, 0.0001), (0.005, 0.005, 0.0005)],
     },
 }
+
+N_BOOTSTRAP = 1000
+DECISION_THRESHOLD = 0.5
+ECE_N_BINS = 10
+CI_PERCENTILES = (2.5, 97.5)
+REFERENCE_MODEL = "xgboost"
